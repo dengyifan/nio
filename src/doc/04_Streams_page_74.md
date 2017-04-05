@@ -611,9 +611,9 @@ public class Employee implements Serializable{
     
     writeObject() 并不序列化静态字段（static fields）。相反，没带 transient 的所有字段都能被序列化，如下声明：
     
-    ```
-        public transient char[] password;
-    ```
+  ```
+      public transient char[] password;
+  ```
     
     通过声明为 transient 类型避免将 password 序列化。JVM 的序列化机制会忽略掉所有标记为 transient 的字段。
     
@@ -676,14 +676,14 @@ public class SerializatioinDemo {
 }
 ```
 
-    通过为类加上 static final long serialVersionUID = long integer ；可以避免 InvalidClassException 。这个 serialVersionUID 值必须是唯一的。
+通过为类加上 static final long serialVersionUID = long integer ；可以避免 InvalidClassException 。这个 serialVersionUID 值必须是唯一的。
     
     
-    JDK 提供了 serialver 工具用于计算生成 SUID 。如下： （page 109）
-    ```
-        serialver Employee
-        
-        Employee: static final long serialVersionUID = 1517331364702470316L;
-        
-        
-    ```
+  JDK 提供了 serialver 工具用于计算生成 SUID 。如下： （page 109）
+  ```
+      serialver Employee
+
+      Employee: static final long serialVersionUID = 1517331364702470316L;
+
+
+  ```
