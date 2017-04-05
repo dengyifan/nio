@@ -33,7 +33,7 @@
     在 java.io 包下提供了不同的流操作类用于文件的读写。
     例如，你可以使用 FileInputStream 类打开并建立已经存在的文件。通过使用 read() 从文件输入流中读取字节数组。最后调用 close() 方法来判断指向文件的流。大概如下：
     
-    ```
+```
         FileInputStream fis = null;
         try{
             fis = new FileInputStream("image.jpg");
@@ -54,13 +54,13 @@
                 }
             }
         }    
-    ```
+```
     
     上面的例子描述了用传统的方式去打开、创建指定文件的流进而读取数据。需要关心的是异常的处理 java.io.IOException 。
     
     无论是否有异常抛出，在不使用时一定要关闭输入流。这个操作放置在 try 语句的 finally 块。由于文件关闭的冗长处理，可以替换为使用 JDK7 里的带资源的try语句(try-with-resources) 这会自动文件文件，代码如下：
     
-    ```
+```
         try (FileInputStream fis = new FileInputStream("image.jpg"))
         {
             // Read bytes from file.
@@ -72,11 +72,11 @@
         {
              // Handle exception.
         }
-    ```
+```
     
     一些流处理类用于封装其他一些流处理类。例如，为了提供性能，BufferedInputStream 从另一个流里按块的方式读取并返回到其缓存中，直到 buffer 为空才读取另一块。
     
-    ```
+```
     try(FileInputStream fis = new FileInputStream("image.jpg");
         BufferedInputStream bis = new BufferedInputStream(ifs)){
         
@@ -88,7 +88,7 @@
     } catch(IOException ioe){
         //异常处理
     }
-    ```
+```
 
 ### Stream Classes and Standard I/O
     许多操作系统支持标准I/O操作。这些提前建立连接的流有：标准输入流、标准输出流、标准错误流。
@@ -97,7 +97,7 @@
     标准输出流和标准错误流默认将数据输出到屏幕。
     然后这些流都可以重定向到其他目的地进行数据的读写，如文件。
     
-    ```
+```
     //从标准输入流里读取单个字符
     int ch = System.in.read();
     
@@ -106,14 +106,15 @@
     
     //向标准错误流写字符串
     System.err.println("I/O error:" + ioe.getMessage());
-    ```
-    
+```    
+
+
 ### NIO
 
     现代操作系统提供了更复杂的 I/O 服务以提高I/O性能以及简化I/O。
     可扩展性I/O、更快的二进制缓存及字符流、正则表达式、编码转换。
     包含的成员有：  
-    
+            
 - [x] Buffers
 - [x] Channels
 - [x] Selectors
