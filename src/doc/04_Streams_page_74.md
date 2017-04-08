@@ -611,9 +611,9 @@ public class Employee implements Serializable{
     
     writeObject() 并不序列化静态字段（static fields）。相反，没带 transient 的所有字段都能被序列化，如下声明：
     
-  ```
-      public transient char[] password;
-  ```
+    ```
+        public transient char[] password;
+    ```
     
     通过声明为 transient 类型避免将 password 序列化。JVM 的序列化机制会忽略掉所有标记为 transient 的字段。
     
@@ -676,14 +676,375 @@ public class SerializatioinDemo {
 }
 ```
 
-通过为类加上 static final long serialVersionUID = long integer ；可以避免 InvalidClassException 。这个 serialVersionUID 值必须是唯一的。
+    通过为类加上 static final long serialVersionUID = long integer ；可以避免 InvalidClassException 。这个 serialVersionUID 值必须是唯一的。
     
     
-  JDK 提供了 serialver 工具用于计算生成 SUID 。如下： （page 109）
-  ```
-      serialver Employee
+    JDK 提供了 serialver 工具用于计算生成 SUID 。如下： （page 109）
+    ```
+        serialver Employee
+        
+        Employee: static final long serialVersionUID = 1517331364702470316L;
+        
+        
+    ```
 
-      Employee: static final long serialVersionUID = 1517331364702470316L;
+#### Custom Serialization and deserialization 自定义序列化和反序列化  
+     前面讨论的是默认序列化反序列化（通过添加transient 防止被序列化）。然而，有时候需要自定义完成实现序列化。   
+     例如，你想要序列化一个没有实现serializable接口的类。替代方案是写一个类作为该类的子类并实现serializable接口，子类调用父类的构造方法。   
+     尽管该种替代方案可以序列化子类对象，但不能反序列这些已序列化的类，当超类并没有声明一个无参构造方法，这就需要反序列化机制来处理这种问题。   
+     示例如下：(存在问题的反序列)   
+```
+public class Employee {
+    private String name;
+
+    Employee(String name){
+        this.name = name;
+    }
+
+    @Override
+    public String toString() {
+        return name;
+    }
+}
 
 
-  ```
+public class SerEmployee extends Employee implements Serializable {
+    SerEmployee(String name){
+        super(name);
+    }
+}
+
+
+public class SerializationDemo {
+
+    public static String FILENAME = "/home/yifan/learn/java/nio/exercise/employee.dat";
+    public static void main(String[] args){
+
+
+        ObjectOutputStream oos = null;
+        ObjectInputStream ois = null;
+
+        try{
+            oos = new ObjectOutputStream(new FileOutputStream(FILENAME));
+            SerEmployee se = new SerEmployee("John Doe");
+            System.out.println(se);
+            oos.writeObject(se);
+            oos.close();
+            oos = null;
+            System.out.println("se object written to file");
+
+            ois = new ObjectInputStream(new FileInputStream(FILENAME));
+            se = (SerEmployee)ois.readObject();
+            System.out.println("se object read from file");
+            System.out.println(se);
+
+        }catch(ClassNotFoundException cnfe){
+            cnfe.printStackTrace();
+        }catch (IOException ioe){
+            ioe.printStackTrace();
+        }finally {
+            if(oos != null)
+                try{
+                    oos.close();
+                }catch(IOException  ioe){
+                    assert false;
+                }
+
+            if(ois != null)
+                try{
+                    ois.close();
+                }catch(IOException e){
+                    assert false;
+                }
+        }
+    }
+}
+
+
+```
+
+  输出：
+```
+John Doe
+se object written to file
+java.io.InvalidClassException: com.yifan.demo.java.nio.SerEmployee; no valid constructor
+	at java.io.ObjectStreamClass$ExceptionInfo.newInvalidClassException(ObjectStreamClass.java:150)
+	at java.io.ObjectStreamClass.checkDeserialize(ObjectStreamClass.java:790)
+	at java.io.ObjectInputStream.readOrdinaryObject(ObjectInputStream.java:1775)
+	at java.io.ObjectInputStream.readObject0(ObjectInputStream.java:1351)
+	at java.io.ObjectInputStream.readObject(ObjectInputStream.java:371)
+	at com.yifan.demo.java.nio.SerializationDemo.main(SerializationDemo.java:27)
+```   
+
+ 由于Employee并不存在无参的默认构造方法，在反序列化时， 上面输出抛出了InvalidClassException 。
+
+　通过采用下面的适配模式可以解决这个问题，链接：https://en.wikipedia.org/wiki/Adapter_pattern。另外，你也可以在子类里声明一对prviate 方法来序列化以及反序列化时调用。
+
+　通常，序列化将输出类实例的字段输出到底层输出流里。然而，你可以声明一个 private void writeObject(ObjectInputStream oos)方法来阻止这默认的操作。
+
+　当序列化进行时发现该类存在该方法，它会调用这个私有的方法而不是自动地输出实例对象的字段。实际输出的值只有在私有方法里明显输出的字段。
+
+　同样，在反序列化时默认从底层输入流里读取值并设置到类实例对象的字段里。然后，你也可以提供一个private void readObject(ObjectInputStream ois)　方法来阻止这默认的行为。
+
+　当反序列化时发现该类存在这私有的方法，它会调用该私有方法而不是默认从输入流里读取并设置类实例对象字段的值。实际设置的字段值，是由该私有方法里显示设定的字段的值。
+
+　如下：
+```
+public class Employee {
+    private String name;
+
+    Employee(String name){
+        this.name = name;
+    }
+
+    @Override
+    public String toString() {
+        return name;
+    }
+}
+
+
+
+package classic.serialization;
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+
+/**
+ * Created by yifan on 17-4-8.
+ */
+public class SerEmployee implements Serializable {
+
+    private Employee emp;
+    private String name;
+
+    SerEmployee(String name){
+        this.name = name;
+        emp = new Employee(name);
+    }
+
+    private void writeObject(ObjectOutputStream oos) throws IOException{
+        oos.writeUTF(name);
+    }
+
+    private void readObject(ObjectInputStream ois)
+      throws ClassNotFoundException,IOException{
+        name = ois.readUTF();
+        emp = new Employee(name);
+    }
+
+    @Override
+    public String toString() {
+        return name;
+    }
+}
+
+
+package classic.serialization;
+
+import java.io.*;
+
+/**
+ * Created by yifan on 17-4-8.
+ */
+public class SerializationDemo {
+
+    private static String FILE_NAME = "/home/yifan/learn/java/nio_note/exercise/employee.txt";
+    public static void main(String[] args){
+
+        ObjectOutputStream oos = null;
+        ObjectInputStream ois = null;
+
+        try{
+         oos = new ObjectOutputStream(new FileOutputStream(FILE_NAME));
+         SerEmployee se = new SerEmployee("John Doe");
+         System.out.println(se);
+         oos.writeObject(se);
+         oos.close();
+         oos = null;
+
+         System.out.println("se object written to file");
+         ois = new ObjectInputStream(new FileInputStream(FILE_NAME));
+         se = (SerEmployee)ois.readObject();
+         System.out.println("se object read from file");
+         System.out.println(se);
+        }catch(ClassNotFoundException cnfe){
+            cnfe.printStackTrace();
+        }catch (IOException ioe){
+            ioe.printStackTrace();
+        }finally {
+            if(oos != null){
+                try{
+                 oos.close();
+                }catch(IOException ioe){
+                    assert false;
+                }
+            }
+
+            if(ois != null){
+                try {
+                    ois.close();
+                }catch (IOException ioe){
+                    assert false;
+                }
+            }
+        }
+    }
+}
+
+```　
+
+  运行输出如下：
+```
+John Doe
+se object written to file
+se object read from file
+John Doe
+```
+
+#### Externalization 
+    除了默认的序列化、反序列化以及自定义序列化、自定义反序列化外，java 还支持 externalization 。与默认的或客户定义序列化、反序列化不一样的时，externalization 提供完整的序列化反序列化操作。
+
+　　java 通过 java.io.Externalizable 来支持externalization 。该接口声明了下面一对公共方法：
+方法名|描述
+void writeExternal(ObjectOutput out) |通过调用out上面不同的方法将对象的类似输出。当发生I/O错误时，抛出IOException
+void readExternal(ObjectInput in) | 通过调用in 上面不同的方法读取输入流中的数据并填充对象的字段值。当发生I/O错误时，抛出IOException ;当被填充的对象的类不存在时抛出ClassNotFoundException。
+
+　　如果一个类实现了Externalizable类，那么writeExternal()方法用于将对象的所有字段值保存。通过 readExternal()方法也可以从输入流中恢复所有字段的值。示例如下：
+```
+hckage classic.externalization;
+
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+
+/**
+ * Created by yifan on 17-4-8.
+ */
+public class Employee implements Externalizable {
+    private String name;
+    private int age;
+
+    public Employee(){
+        System.out.println("Employee() called");
+    }
+
+    public Employee(String name,int age){
+        this.name = name;
+        this.age = age;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public int getAge() {
+        return age;
+    }
+
+    public void setAge(int age) {
+        this.age = age;
+    }
+
+    @Override
+    public void writeExternal(ObjectOutput out) throws IOException {
+        System.out.println("writeExternal() called");
+        out.writeUTF(name);
+        out.writeInt(age);
+    }
+
+    @Override
+    public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+        System.out.println("readExternal() called");
+        name = in.readUTF();
+        age = in.readInt();
+    }
+}
+
+
+
+package classic.externalization;
+
+
+import classic.customer.serialization.SerEmployee;
+
+import java.io.*;
+
+/**
+ * Created by yifan on 17-4-8.
+ */
+public class ExternalizationDemo {
+
+    private static String FILE_NAME = "/home/yifan/learn/java/nio_note/exercise/employee.txt";
+    public static void main(String[] args){
+
+        ObjectOutputStream oos = null;
+        ObjectInputStream ois = null;
+
+        try{
+         oos = new ObjectOutputStream(new FileOutputStream(FILE_NAME));
+         Employee se = new Employee("John Doe",15);
+         oos.writeObject(se);
+         oos.close();
+         oos = null;
+
+         System.out.println("se object written to file");
+         ois = new ObjectInputStream(new FileInputStream(FILE_NAME));
+         se = (Employee)ois.readObject();
+         System.out.println("se object read from file");
+        }catch(ClassNotFoundException cnfe){
+            cnfe.printStackTrace();
+        }catch (IOException ioe){
+            ioe.printStackTrace();
+        }finally {
+            if(oos != null){
+                try{
+                 oos.close();
+                }catch(IOException ioe){
+                    assert false;
+                }
+            }
+
+            if(ois != null){
+                try {
+                    ois.close();
+                }catch (IOException ioe){
+                    assert false;
+                }
+            }
+        }
+    }
+}
+
+```
+
+  运行后输出：
+  
+```
+writeExternal() called  
+se object written to file  
+Employee() called  
+readExternal() called  
+se object read from file
+```
+
+   在序列化对象前，序列化机制会检查对象对应的类是否实现了Externalizable接口。如果实现了，序列化机制就会调用 writeExternal() 方法。否则，序列化机制就会检查是否存在 private writeObject(ObjectOutputStream oos)　方法，当存在时则调用该方法。当不包含该方法时，则进行默认的序列化，只包括那些并有用transient修饰的字段。
+　在反序列化对象前，序列化机制会检查对象对应的类是否实现了Externalizable接口。如果实现了，反序列化机制就会调用readExternal()方法。否则，序列化机制就会检查是否存在 private readObject(ObjectInputStream ois) ,当存在时则调用该方法。当不包含该方法时，则进行默认的反序列化，只包括那些并没有用transient修饰的字段  。  
+　
+###  PrintStream 打印流
+　　所有的流类里，PrintStream 比较古怪，按照约束应该被命名为　PrintOutputStream。这个过滤输出流将字符数据输出到低层的输出流。PrintStream 使用默认的字符编码将字符串的字符转化为字节。由于PrintStream 并不支持不同的字符编码，就使用PrintWriter 类来代替PrntStre am 。
+　　
+　
+PrintStream 提供了另外三个有用的特性：
+- [ ] 与其他输出流不一样，PrintStream 永远不会抛出　IOException。相反，通过调用 boolean checkError() 方法可以辨别是否发生错误。
+- [ ] PrintStream 可以自动地将数据刷到低层输出流。换句话说，flush()方法每当一个字节被写出时自动被调用。
+- [ ] PrintStream　提供了 format(String format,Object... args)来进行格式化输出。背后实际上是调用 Formatter 类。
+
+
