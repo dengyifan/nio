@@ -74,7 +74,7 @@
         }
 ```
     
-    一些流处理类用于封装其他一些流处理类。例如，为了提供性能，BufferedInputStream 从另一个流里按块的方式读取并返回到其缓存中，直到 buffer 为空才读取另一块。
+    一些流处理类用于封装其他一些流处理类。例如，为了提供性能，BufferedInputStream 从另一个流里按块的方式读取并返回到其缓存中，直到 nio.nio.buffer 为空才读取另一块。
     
 ```
     try(FileInputStream fis = new FileInputStream("image.jpg");
@@ -141,7 +141,7 @@
      
      通过文件锁处理器可以用来阻止或限制对一个文件的访问进程。文件锁可以应用于整个文件，也可以应用于文件的一个部分。一个文件锁的范围是从文件起始的位置到指定大小的位置。
      
-     FileChannel 另一个特性是通过 map() 方法 进行对I/O文件的内存映射(memory-mapped)，这会返回 java.nio.MappedByteBuffer ；它的内容就是内存里对于文件一部分的映射。文件内容的访问可以直接通过对内存的访问；buffer 复制读写都可以不用了。
+     FileChannel 另一个特性是通过 map() 方法 进行对I/O文件的内存映射(memory-mapped)，这会返回 java.nio.MappedByteBuffer ；它的内容就是内存里对于文件一部分的映射。文件内容的访问可以直接通过对内存的访问；nio.nio.buffer 复制读写都可以不用了。
      
      通过调用 java.nio.channels.Channels 类里的方法或者传递 I/O 类如 RanddomAccessFile 都可以获得 Channel。
      

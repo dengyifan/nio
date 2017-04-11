@@ -1,4 +1,4 @@
-package classic.buffer;
+package nio.buffer;
 
 import java.nio.ByteBuffer;
 

@@ -1,4 +1,4 @@
-package classic.buffer;
+package nio.buffer;
 
 import java.nio.CharBuffer;
 
@@ -18,7 +18,7 @@ public class BufferFlipDemo {
 
         for(int i=0;i<poem.length;i++){
 
-            //Fill the buffer
+            //Fill the nio.nio.buffer
             for(int j=0;j<poem[i].length();j++){
                 buffer.put(poem[i].charAt(j));
             }
@@ -26,11 +26,11 @@ public class BufferFlipDemo {
             //Flip the buffers so that its contents can be read.
             buffer.flip();
 
-            //Drain the buffer
+            //Drain the nio.nio.buffer
             while(buffer.hasRemaining())
                 System.out.print(buffer.get());
 
-            //Empty the buffer to prevent BufferOverflowException
+            //Empty the nio.nio.buffer to prevent BufferOverflowException
             buffer.clear();
 
             System.out.println();
