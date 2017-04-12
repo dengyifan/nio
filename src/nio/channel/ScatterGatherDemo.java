@@ -14,10 +14,10 @@ import java.nio.channels.ScatteringByteChannel;
 public class ScatterGatherDemo {
     public static void main(String[] args) throws IOException{
         ScatteringByteChannel src;
-        FileInputStream fis = new FileInputStream("E:\\2017\\demo\\java\\nio\\src\\nio\\channel\\x.txt");
+        FileInputStream fis = new FileInputStream("/home/yifan/learn/toolspace/idea/nio/src/nio/channel/x.txt");
         src = (ScatteringByteChannel) Channels.newChannel(fis);
-        ByteBuffer buffer1 = ByteBuffer.allocateDirect(5);
-        ByteBuffer buffer2 = ByteBuffer.allocateDirect(3);
+        ByteBuffer buffer1 = ByteBuffer.allocateDirect(8);
+        ByteBuffer buffer2 = ByteBuffer.allocateDirect(8);
         ByteBuffer[] buffers = {buffer1,buffer2};
         src.read(buffers);
 
@@ -35,7 +35,7 @@ public class ScatterGatherDemo {
         buffer2.rewind();
 
         GatheringByteChannel dest;
-        FileOutputStream fos = new FileOutputStream("E:\\2017\\demo\\java\\nio\\src\\nio\\channel\\y.txt");
+        FileOutputStream fos = new FileOutputStream("/home/yifan/learn/toolspace/idea/nio/src/nio/channel/y.txt");
         dest = (GatheringByteChannel)Channels.newChannel(fos);
         buffers[0] = buffer2;
         buffers[1] = buffer1;
